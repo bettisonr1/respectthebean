@@ -116,3 +116,40 @@ input:focus, select:focus, textarea:focus {
 .row > * {
   flex: 1;
 }
+
+.numeric-stepper {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+}
+
+.numeric-stepper__btn {
+  flex: 0 0 auto;
+  min-width: 40px;
+  padding: 10px 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--accent-light);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.numeric-stepper__btn:active {
+  background: var(--bg-input);
+}
+
+.numeric-stepper__btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.numeric-stepper__input {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  padding-left: 8px;
+  padding-right: 8px;
+}

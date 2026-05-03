@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import NumericStepper from '../components/common/NumericStepper'
 import { createShot, updateShot, getUploadUrl, uploadPhoto } from '../services/api'
 import type { Recommendation, TasteRating } from '../types'
+
+const DEFAULT_YIELD_G = 36
+const DEFAULT_TIME_S = 27
 
 type Stage = 'pre' | 'post'
 
@@ -17,14 +21,18 @@ export default function NewShot() {
   const [stage, setStage] = useState<Stage>('pre')
   const [shotId, setShotId] = useState<string | null>(null)
 
+  const rec = state?.recommendation
+
   const [grindSetting, setGrindSetting] = useState(
-    String(state?.recommendation?.grindSetting ?? 8)
+    String(rec?.grindSetting ?? 8)
   )
-  const [doseIn, setDoseIn] = useState(
-    String(state?.recommendation?.doseIn ?? 18)
+  const [doseIn, setDoseIn] = useState(String(rec?.doseIn ?? 18))
+  const [yieldOut, setYieldOut] = useState(
+    String(rec?.yieldOut ?? DEFAULT_YIELD_G)
   )
-  const [yieldOut, setYieldOut] = useState('')
-  const [extractionTime, setExtractionTime] = useState('')
+  const [extractionTime, setExtractionTime] = useState(
+    String(rec?.extractionTime ?? DEFAULT_TIME_S)
+  )
   const [rating, setRating] = useState<TasteRating | null>(null)
   const [photo, setPhoto] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
@@ -76,20 +84,24 @@ export default function NewShot() {
         <div className="stack">
           <div>
             <label className="label">Grind setting</label>
-            <input
-              type="number"
+            <NumericStepper
               value={grindSetting}
-              onChange={e => setGrindSetting(e.target.value)}
-              min={1} max={30}
+              onChange={setGrindSetting}
+              fallback={rec?.grindSetting ?? 8}
+              min={1}
+              max={30}
+              inputProps={{ min: 1, max: 30, step: 0.1 }}
             />
           </div>
           <div>
             <label className="label">Dose in (g)</label>
-            <input
-              type="number"
+            <NumericStepper
               value={doseIn}
-              onChange={e => setDoseIn(e.target.value)}
-              step={0.1}
+              onChange={setDoseIn}
+              fallback={rec?.doseIn ?? 18}
+              min={0.1}
+              max={50}
+              inputProps={{ min: 0.1, max: 50, step: 0.1 }}
             />
           </div>
           <button className="btn-primary" onClick={handlePreSubmit} disabled={saving}>
@@ -104,22 +116,27 @@ export default function NewShot() {
     <div className="page">
       <h1 className="page-title">After the pull</h1>
       <div className="stack">
-        <div className="row">
+        <div className="stack">
           <div>
             <label className="label">Yield out (g)</label>
-            <input
-              type="number"
+            <NumericStepper
               value={yieldOut}
-              onChange={e => setYieldOut(e.target.value)}
-              step={0.1}
+              onChange={setYieldOut}
+              fallback={rec?.yieldOut ?? DEFAULT_YIELD_G}
+              min={0.1}
+              max={200}
+              inputProps={{ min: 0.1, max: 200, step: 0.1 }}
             />
           </div>
           <div>
             <label className="label">Time (s)</label>
-            <input
-              type="number"
+            <NumericStepper
               value={extractionTime}
-              onChange={e => setExtractionTime(e.target.value)}
+              onChange={setExtractionTime}
+              fallback={rec?.extractionTime ?? DEFAULT_TIME_S}
+              min={1}
+              max={120}
+              inputProps={{ min: 1, max: 120, step: 0.1 }}
             />
           </div>
         </div>

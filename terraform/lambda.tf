@@ -13,7 +13,7 @@ locals {
 resource "aws_lambda_function" "machines" {
   function_name    = "${local.prefix}-machines"
   role             = aws_iam_role.lambda.arn
-  handler          = "handlers/machines.handler"
+  handler          = "dist/handlers/machines.handler"
   runtime          = "nodejs20.x"
   filename         = local.lambda_zip
   source_code_hash = filebase64sha256(local.lambda_zip)
@@ -26,7 +26,7 @@ resource "aws_lambda_function" "machines" {
 resource "aws_lambda_function" "beans" {
   function_name    = "${local.prefix}-beans"
   role             = aws_iam_role.lambda.arn
-  handler          = "handlers/beans.handler"
+  handler          = "dist/handlers/beans.handler"
   runtime          = "nodejs20.x"
   filename         = local.lambda_zip
   source_code_hash = filebase64sha256(local.lambda_zip)
@@ -39,7 +39,7 @@ resource "aws_lambda_function" "beans" {
 resource "aws_lambda_function" "shots" {
   function_name    = "${local.prefix}-shots"
   role             = aws_iam_role.lambda.arn
-  handler          = "handlers/shots.handler"
+  handler          = "dist/handlers/shots.handler"
   runtime          = "nodejs20.x"
   filename         = local.lambda_zip
   source_code_hash = filebase64sha256(local.lambda_zip)
@@ -52,7 +52,7 @@ resource "aws_lambda_function" "shots" {
 resource "aws_lambda_function" "recommendations" {
   function_name    = "${local.prefix}-recommendations"
   role             = aws_iam_role.lambda.arn
-  handler          = "handlers/recommendations.handler"
+  handler          = "dist/handlers/recommendations.handler"
   runtime          = "nodejs20.x"
   filename         = local.lambda_zip
   source_code_hash = filebase64sha256(local.lambda_zip)
@@ -65,7 +65,7 @@ resource "aws_lambda_function" "recommendations" {
 resource "aws_lambda_function" "artwork_api" {
   function_name    = "${local.prefix}-artwork-api"
   role             = aws_iam_role.lambda.arn
-  handler          = "handlers/artwork.uploadUrlHandler"
+  handler          = "dist/handlers/artwork.uploadUrlHandler"
   runtime          = "nodejs20.x"
   filename         = local.lambda_zip
   source_code_hash = filebase64sha256(local.lambda_zip)
@@ -78,7 +78,7 @@ resource "aws_lambda_function" "artwork_api" {
 resource "aws_lambda_function" "artwork_trigger" {
   function_name    = "${local.prefix}-artwork-trigger"
   role             = aws_iam_role.lambda.arn
-  handler          = "handlers/artwork.s3TriggerHandler"
+  handler          = "dist/handlers/artwork.s3TriggerHandler"
   runtime          = "nodejs20.x"
   filename         = local.lambda_zip
   source_code_hash = filebase64sha256(local.lambda_zip)
