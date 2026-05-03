@@ -6,6 +6,9 @@ export interface Machine {
   userId: string
   name: string
   model: string
+  /** Inclusive dial range for this grinder (lower number = finer in this app). Optional on legacy records. */
+  grindSettingMin?: number
+  grindSettingMax?: number
   createdAt: string
 }
 
@@ -46,6 +49,8 @@ export interface ArtworkFeedback {
   suggestion: string
 }
 
+export type RecommendationSource = 'taste-correction' | 'balanced-history' | 'last-shot' | 'roast-defaults'
+
 export interface Recommendation {
   grindSetting: number
   doseIn: number
@@ -53,4 +58,8 @@ export interface Recommendation {
   extractionTime: number
   explanation: string
   basedOnShots: number
+  /** How settings were derived (rules); community data can add sources later */
+  source: RecommendationSource
+  /** Deterministic bullet points from rule engine; explanation is LLM-flavored prose */
+  tweaks: string[]
 }

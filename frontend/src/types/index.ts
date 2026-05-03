@@ -5,6 +5,8 @@ export interface Machine {
   machineId: string
   name: string
   model: string
+  grindSettingMin?: number
+  grindSettingMax?: number
   createdAt: string
 }
 
@@ -43,6 +45,8 @@ export interface ArtworkFeedback {
   suggestion: string
 }
 
+export type RecommendationSource = 'taste-correction' | 'balanced-history' | 'last-shot' | 'roast-defaults'
+
 export interface Recommendation {
   grindSetting: number
   doseIn: number
@@ -50,4 +54,6 @@ export interface Recommendation {
   extractionTime: number
   explanation: string
   basedOnShots: number
+  source: RecommendationSource
+  tweaks: string[]
 }

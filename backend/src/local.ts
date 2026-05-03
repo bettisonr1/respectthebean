@@ -37,6 +37,12 @@ const routes: Route[] = [
     pathParameters: (match) => ({ machineId: decodeURIComponent(match[1]) }),
   },
   {
+    method: 'PATCH',
+    pattern: /^\/machines\/([^/]+)$/,
+    handler: machinesHandler,
+    pathParameters: (match) => ({ machineId: decodeURIComponent(match[1]) }),
+  },
+  {
     method: 'GET',
     pattern: /^\/beans$/,
     handler: beansHandler,

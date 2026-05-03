@@ -17,6 +17,10 @@ export const createMachine = (data: Omit<Machine, 'machineId' | 'createdAt'>) =>
   request<Machine>('/machines', { method: 'POST', body: JSON.stringify(data) })
 export const deleteMachine = (machineId: string) =>
   request<void>(`/machines/${machineId}`, { method: 'DELETE' })
+export const updateMachine = (
+  machineId: string,
+  data: Partial<Pick<Machine, 'name' | 'model' | 'grindSettingMin' | 'grindSettingMax'>>,
+) => request<Machine>(`/machines/${machineId}`, { method: 'PATCH', body: JSON.stringify(data) })
 
 // Beans
 export const getBeans = () => request<Bean[]>('/beans')

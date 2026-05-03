@@ -8,7 +8,7 @@ resource "aws_api_gateway_rest_api" "main" {
 locals {
   routes = {
     machines        = { path = "machines", methods = ["GET", "POST"], lambda = aws_lambda_function.machines }
-    machine_id      = { path = "machines/{machineId}", methods = ["DELETE"], lambda = aws_lambda_function.machines }
+    machine_id      = { path = "machines/{machineId}", methods = ["DELETE", "PATCH"], lambda = aws_lambda_function.machines }
     beans           = { path = "beans", methods = ["GET", "POST"], lambda = aws_lambda_function.beans }
     bean_id         = { path = "beans/{beanId}", methods = ["DELETE"], lambda = aws_lambda_function.beans }
     bean_barcode    = { path = "beans/barcode/{barcode}", methods = ["GET"], lambda = aws_lambda_function.beans }

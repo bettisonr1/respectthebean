@@ -60,6 +60,13 @@ export default function Home() {
               <Stat label="Target yield" value={`${recommendation.yieldOut}g`} />
               <Stat label="Target time" value={`${recommendation.extractionTime}s`} />
             </div>
+            {recommendation.tweaks.length > 0 && (
+              <ul style={{ margin: '0 0 10px 1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                {recommendation.tweaks.map((t, i) => (
+                  <li key={i}>{t}</li>
+                ))}
+              </ul>
+            )}
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               {recommendation.explanation}
             </p>

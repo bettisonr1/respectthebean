@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
-import type { ArtworkFeedback } from '../types'
+import type { ArtworkFeedback, RecommendationSource } from '../types'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -36,23 +36,36 @@ export async function analyseLattArt(imageBase64: string, mediaType: 'image/jpeg
   return JSON.parse(text) as ArtworkFeedback
 }
 
-export async function generateRecommendationExplanation(
-  grindSetting: number,
-  doseIn: number,
-  yieldOut: number,
-  extractionTime: number,
-  basedOnShots: number,
-  beanName: string,
-): Promise<string> {
+export interface RecommendationExplanationInput {
+  beanName: string
+  settings: { grindSetting: number; doseIn: number; yieldOut: number; extractionTime: number }
+  basedOnShots: number
+  source: RecommendationSource
+  tweaks: string[]
+  lastRating?: 'sour' | 'bitter'
+}
+
+/** Turns rule-derived numbers + tweak bullets into friendly copy. Does not invent different targets. */
+export async function generateRecommendationExplanation(input: RecommendationExplanationInput): Promise<string> {
+  const { beanName, settings, basedOnShots, source, tweaks, lastRating } = input
+  const facts = `
+Bean: ${beanName}
+Targets — grind ${settings.grindSetting}, dose ${settings.doseIn}g, yield ${settings.yieldOut}g, time ~${settings.extractionTime}s.
+Derivation: ${source}. Shots in history for this bean+machine: ${basedOnShots}.
+${lastRating ? `Last shot taste: ${lastRating}.` : ''}
+Rule summary (use only these facts):
+${tweaks.map(t => `- ${t}`).join('\n')}
+`.trim()
+
   const message = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 150,
+    max_tokens: 180,
+    system:
+      'You write short espresso tips for home baristas. Use only the facts provided. Do not change grind, dose, yield, or time numbers. One or two friendly sentences, max 45 words.',
     messages: [
       {
         role: 'user',
-        content: `Write a single friendly sentence (max 30 words) explaining this espresso recommendation for ${beanName}:
-Grind: ${grindSetting}, Dose: ${doseIn}g, Target yield: ${yieldOut}g, Target time: ${extractionTime}s.
-Based on ${basedOnShots} previous balanced shot${basedOnShots !== 1 ? 's' : ''}.`,
+        content: `Explain the recommended next shot for this bean. ${facts}`,
       },
     ],
   })
