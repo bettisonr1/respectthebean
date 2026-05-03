@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "tsc",
-    "dev": "ts-node-dev --respawn src/local.ts",
+    "dev": "DOTENV_CONFIG_PATH=../.env ts-node-dev -r dotenv/config --respawn src/local.ts",
     "lint": "eslint src --ext ts"
   },
   "dependencies": {
@@ -16,6 +16,7 @@
     "uuid": "^10.0.0"
   },
   "devDependencies": {
+    "dotenv": "^16.4.5",
     "@types/aws-lambda": "^8.10.143",
     "@types/node": "^20.14.11",
     "@types/uuid": "^10.0.0",

@@ -117,11 +117,17 @@ input:focus, select:focus, textarea:focus {
   flex: 1;
 }
 
+/* Cluster buttons + input in the horizontal center of the screen. */
 .numeric-stepper {
   display: flex;
   align-items: stretch;
+  justify-content: center;
   gap: 6px;
   width: 100%;
+}
+
+.field-group-center {
+  text-align: center;
 }
 
 .numeric-stepper__btn {
@@ -146,8 +152,12 @@ input:focus, select:focus, textarea:focus {
   outline-offset: 2px;
 }
 
+/* Preferred fixed width so inputs match across steppers (button count varies: 2 vs 4). */
 .numeric-stepper__input {
-  flex: 1;
+  box-sizing: border-box;
+  flex: 0 1 5.5rem;
+  width: 5.5rem;
+  max-width: 100%;
   min-width: 0;
   text-align: center;
   padding-left: 8px;

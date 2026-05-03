@@ -46,10 +46,18 @@ export default function NumericStepper({
   stepCoarse = 1,
   inputProps,
 }: NumericStepperProps) {
+  const singleStepSize = stepFine === stepCoarse
+  const wholeNumberSteps =
+    singleStepSize && Number.isInteger(stepFine)
+
   function applyDelta(delta: number) {
-    const base = parseField(value, fallback)
+    const raw = parseField(value, fallback)
+    const base = wholeNumberSteps ? Math.round(raw) : raw
     const next = clamp(base + delta, min, max)
-    onChange(formatStepped(next))
+    const formatted = wholeNumberSteps
+      ? String(Math.round(next))
+      : formatStepped(next)
+    onChange(formatted)
   }
 
   const fc = formatStepSize(stepCoarse)
@@ -57,46 +65,77 @@ export default function NumericStepper({
 
   return (
     <div className="numeric-stepper">
-      <button
-        type="button"
-        className="numeric-stepper__btn"
-        aria-label={`Decrease by ${fc}`}
-        onClick={() => applyDelta(-stepCoarse)}
-      >
-        −{fc}
-      </button>
-      <button
-        type="button"
-        className="numeric-stepper__btn"
-        aria-label={`Decrease by ${ff}`}
-        onClick={() => applyDelta(-stepFine)}
-      >
-        −{ff}
-      </button>
-      <input
-        type="number"
-        className="numeric-stepper__input"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        inputMode="decimal"
-        {...inputProps}
-      />
-      <button
-        type="button"
-        className="numeric-stepper__btn"
-        aria-label={`Increase by ${ff}`}
-        onClick={() => applyDelta(stepFine)}
-      >
-        +{ff}
-      </button>
-      <button
-        type="button"
-        className="numeric-stepper__btn"
-        aria-label={`Increase by ${fc}`}
-        onClick={() => applyDelta(stepCoarse)}
-      >
-        +{fc}
-      </button>
+      {singleStepSize ? (
+        <>
+          <button
+            type="button"
+            className="numeric-stepper__btn"
+            aria-label={`Decrease by ${ff}`}
+            onClick={() => applyDelta(-stepFine)}
+          >
+            −{ff}
+          </button>
+          <input
+            type="number"
+            className="numeric-stepper__input"
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            inputMode="decimal"
+            {...inputProps}
+          />
+          <button
+            type="button"
+            className="numeric-stepper__btn"
+            aria-label={`Increase by ${ff}`}
+            onClick={() => applyDelta(stepFine)}
+          >
+            +{ff}
+          </button>
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            className="numeric-stepper__btn"
+            aria-label={`Decrease by ${fc}`}
+            onClick={() => applyDelta(-stepCoarse)}
+          >
+            −{fc}
+          </button>
+          <button
+            type="button"
+            className="numeric-stepper__btn"
+            aria-label={`Decrease by ${ff}`}
+            onClick={() => applyDelta(-stepFine)}
+          >
+            −{ff}
+          </button>
+          <input
+            type="number"
+            className="numeric-stepper__input"
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            inputMode="decimal"
+            {...inputProps}
+          />
+          <button
+            type="button"
+            className="numeric-stepper__btn"
+            aria-label={`Increase by ${ff}`}
+            onClick={() => applyDelta(stepFine)}
+          >
+            +{ff}
+          </button>
+          <button
+            type="button"
+            className="numeric-stepper__btn"
+            aria-label={`Increase by ${fc}`}
+            onClick={() => applyDelta(stepCoarse)}
+          >
+            +{fc}
+          </button>
+        </>
+      )}
     </div>
   )
 }

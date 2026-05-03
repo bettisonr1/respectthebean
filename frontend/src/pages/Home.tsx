@@ -51,28 +51,6 @@ export default function Home() {
           </select>
         </div>
 
-        {recommendation && (
-          <div className="card">
-            <span className="label">Recommended settings</span>
-            <div className="row" style={{ marginBottom: 8 }}>
-              <Stat label="Grind" value={String(recommendation.grindSetting)} />
-              <Stat label="Dose in" value={`${recommendation.doseIn}g`} />
-              <Stat label="Target yield" value={`${recommendation.yieldOut}g`} />
-              <Stat label="Target time" value={`${recommendation.extractionTime}s`} />
-            </div>
-            {recommendation.tweaks.length > 0 && (
-              <ul style={{ margin: '0 0 10px 1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                {recommendation.tweaks.map((t, i) => (
-                  <li key={i}>{t}</li>
-                ))}
-              </ul>
-            )}
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              {recommendation.explanation}
-            </p>
-          </div>
-        )}
-
         <button
           className="btn-primary"
           onClick={() => navigate('/shot/new', {
@@ -94,15 +72,6 @@ export default function Home() {
           </div>
         )}
       </div>
-    </div>
-  )
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ textAlign: 'center' }}>
-      <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent)' }}>{value}</div>
-      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{label}</div>
     </div>
   )
 }

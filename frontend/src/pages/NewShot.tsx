@@ -82,7 +82,28 @@ export default function NewShot() {
       <div className="page">
         <h1 className="page-title">Before the pull</h1>
         <div className="stack">
-          <div>
+          {rec && (
+            <div className="card">
+              <span className="label">Recommended settings</span>
+              <div className="row" style={{ marginBottom: 8 }}>
+                <Stat label="Grind" value={String(rec.grindSetting)} />
+                <Stat label="Dose in" value={`${rec.doseIn}g`} />
+                <Stat label="Target yield" value={`${rec.yieldOut}g`} />
+                <Stat label="Target time" value={`${rec.extractionTime}s`} />
+              </div>
+              {rec.tweaks.length > 0 && (
+                <ul style={{ margin: '0 0 10px 1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  {rec.tweaks.map((t, i) => (
+                    <li key={i}>{t}</li>
+                  ))}
+                </ul>
+              )}
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                {rec.explanation}
+              </p>
+            </div>
+          )}
+          <div className="field-group-center">
             <label className="label">Grind setting</label>
             <NumericStepper
               value={grindSetting}
@@ -90,10 +111,12 @@ export default function NewShot() {
               fallback={rec?.grindSetting ?? 8}
               min={1}
               max={30}
-              inputProps={{ min: 1, max: 30, step: 0.1 }}
+              stepFine={1}
+              stepCoarse={1}
+              inputProps={{ min: 1, max: 30, step: 1 }}
             />
           </div>
-          <div>
+          <div className="field-group-center">
             <label className="label">Dose in (g)</label>
             <NumericStepper
               value={doseIn}
@@ -117,7 +140,7 @@ export default function NewShot() {
       <h1 className="page-title">After the pull</h1>
       <div className="stack">
         <div className="stack">
-          <div>
+          <div className="field-group-center">
             <label className="label">Yield out (g)</label>
             <NumericStepper
               value={yieldOut}
@@ -128,7 +151,7 @@ export default function NewShot() {
               inputProps={{ min: 0.1, max: 200, step: 0.1 }}
             />
           </div>
-          <div>
+          <div className="field-group-center">
             <label className="label">Time (s)</label>
             <NumericStepper
               value={extractionTime}
@@ -191,6 +214,15 @@ export default function NewShot() {
           {saving ? 'Saving…' : 'Save shot'}
         </button>
       </div>
+    </div>
+  )
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent)' }}>{value}</div>
+      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{label}</div>
     </div>
   )
 }

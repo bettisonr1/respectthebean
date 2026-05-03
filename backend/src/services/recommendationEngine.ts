@@ -1,13 +1,21 @@
 import type { Shot, RoastLevel, TasteRating, RecommendationSource } from '../types'
 import { clampGrindSetting } from '../constants/grind'
 
+/**
+ * Dose + grind come from history or taste correction. **Target yield** is always 1:2 (yield = 2× dose) —
+ * a simple balanced marker, not a prediction from past outputs. **Target time** is roast-based only
+ * (25–35s band from `extractionTime` below), not derived from past shot times or yield math.
+ */
 const DEFAULTS_BY_ROAST: Record<RoastLevel, { grindSetting: number; doseIn: number; yieldOut: number; extractionTime: number }> = {
   light:  { grindSetting: 7,  doseIn: 18, yieldOut: 36, extractionTime: 30 },
   medium: { grindSetting: 8,  doseIn: 18, yieldOut: 36, extractionTime: 27 },
   dark:   { grindSetting: 10, doseIn: 18, yieldOut: 36, extractionTime: 25 },
 }
 
-const YIELD_MAX = 55
+function targetYieldFromDose(doseIn: number): number {
+  return Math.round(doseIn * 2 * 10) / 10
+}
+
 /** Typical double range; clamp suggestions so they stay realistic */
 const DOSE_MIN = 15
 const DOSE_MAX = 22
@@ -58,16 +66,17 @@ export function computeRecommendation(
     }, {})
     const modalRaw = Number(Object.entries(grindCounts).sort((a, b) => b[1] - a[1])[0][0])
     const modalGrind = clampGrindSetting(modalRaw, grindLimits)
+    const doseIn = Math.round(mean(balanced.map(s => s.doseIn)) * 10) / 10
     const tweakLines = [
       modalRaw !== modalGrind
-        ? `Based on ${balanced.length} balanced shots: historical modal grind ${modalRaw} clamped to ${modalGrind} for this machine’s dial (${grindLimits.min}–${grindLimits.max}).`
-        : `Based on ${balanced.length} balanced shots: modal grind ${modalGrind}, mean dose / yield / time from those shots.`,
+        ? `Based on ${balanced.length} balanced shots: historical modal grind ${modalRaw} clamped to ${modalGrind} for this machine’s dial (${grindLimits.min}–${grindLimits.max}). Mean dose ${doseIn}g; target yield 1:2 (${targetYieldFromDose(doseIn)}g); target time ~${defaults.extractionTime}s (${roastLevel} roast, 25–35s band).`
+        : `Based on ${balanced.length} balanced shots: modal grind ${modalGrind}, mean dose ${doseIn}g; target yield 1:2 (${targetYieldFromDose(doseIn)}g); target time ~${defaults.extractionTime}s (${roastLevel} roast, 25–35s band).`,
     ]
     const settings = {
       grindSetting: modalGrind,
-      doseIn: Math.round(mean(balanced.map(s => s.doseIn)) * 10) / 10,
-      yieldOut: Math.round(mean(balanced.map(s => s.yieldOut!)) * 10) / 10,
-      extractionTime: Math.round(mean(balanced.map(s => s.extractionTime!))),
+      doseIn,
+      yieldOut: targetYieldFromDose(doseIn),
+      extractionTime: defaults.extractionTime,
     }
     return {
       settings,
@@ -79,16 +88,19 @@ export function computeRecommendation(
 
   if (ordered.length > 0) {
     const s = last!
+    const doseIn = s.doseIn
     return {
       settings: {
         grindSetting: clampGrindSetting(s.grindSetting, grindLimits),
-        doseIn: s.doseIn,
-        yieldOut: s.yieldOut ?? defaults.yieldOut,
-        extractionTime: s.extractionTime ?? defaults.extractionTime,
+        doseIn,
+        yieldOut: targetYieldFromDose(doseIn),
+        extractionTime: defaults.extractionTime,
       },
       basedOnShots: ordered.length,
       source: 'last-shot',
-      tweaks: ['Continue from your last settings on this bean and machine; keep dialing until taste is balanced.'],
+      tweaks: [
+        `Continue from your last grind/dose on this bean and machine. Target yield 1:2 (${targetYieldFromDose(doseIn)}g); target time ~${defaults.extractionTime}s (${roastLevel} roast, 25–35s band).`,
+      ],
     }
   }
 
@@ -96,6 +108,7 @@ export function computeRecommendation(
     settings: {
       ...defaults,
       grindSetting: clampGrindSetting(defaults.grindSetting, grindLimits),
+      yieldOut: targetYieldFromDose(defaults.doseIn),
     },
     basedOnShots: 0,
     source: 'roast-defaults',
@@ -104,14 +117,8 @@ export function computeRecommendation(
 }
 
 /**
- * Taste correction levers (rule-of-thumb, not physics):
- * - **Grind** — primary: more/finer surface area and contact time vs channeling risk.
- * - **Dose** — secondary: changes puck resistance and strength; use when grind is already at the dial limit,
- *   or (future) when time suggests flow issues.
- * - **Yield** — already used for sour as a gentler ratio nudge alongside grind.
- *
- * We **prefer grind first** one step; if that step is clamped (already finest/coarsest), **nudge dose**
- * by ±0.5g instead so there is still a concrete change.
+ * Taste correction adjusts **grind** (primary) and **dose** (when dial is maxed out).
+ * Target yield and time are not “predicted” here — yield stays 1:2 with the chosen dose; time follows roast defaults.
  */
 function correctFromLastShot(
   last: Shot,
@@ -120,13 +127,10 @@ function correctFromLastShot(
   totalShots: number,
   grindLimits: { min: number; max: number },
 ): EngineResult {
-  const baseYield = last.yieldOut ?? defaults.yieldOut
-  const baseTime = last.extractionTime ?? defaults.extractionTime
   const tweaks: string[] = []
 
   let grindSetting = last.grindSetting
   let doseIn = last.doseIn
-  let yieldOut = baseYield
 
   const { min: gmin, max: gmax } = grindLimits
 
@@ -136,27 +140,22 @@ function correctFromLastShot(
 
     if (canGoFiner) {
       grindSetting = finer
-      yieldOut = Math.min(YIELD_MAX, Math.round((baseYield + 1) * 10) / 10)
+      tweaks.push('Sour → try a finer grind first (more extraction).')
       tweaks.push(
-        'Sour → prefer finer grind first (more extraction); slightly higher target yield as a second nudge.',
-      )
-      tweaks.push(
-        `Grind ${last.grindSetting} → ${grindSetting}; yield ${baseYield}g → ${yieldOut}g; dose ${doseIn}g unchanged.`,
+        `Grind ${last.grindSetting} → ${grindSetting}; dose ${doseIn}g unchanged. Targets: yield 1:2 (${targetYieldFromDose(doseIn)}g), time ~${defaults.extractionTime}s.`,
       )
     } else {
       grindSetting = last.grindSetting
       doseIn = Math.min(DOSE_MAX, Math.round((last.doseIn + DOSE_STEP) * 10) / 10)
-      yieldOut = Math.min(YIELD_MAX, Math.round((baseYield + 1) * 10) / 10)
       if (doseIn > last.doseIn) {
         tweaks.push(
           `Already at this machine’s finest setting (${gmin}) — bump dose slightly to add puck resistance and slow the shot.`,
         )
         tweaks.push(
-          `Dose ${last.doseIn}g → ${doseIn}g; yield ${baseYield}g → ${yieldOut}g; grind stays at ${grindSetting}.`,
+          `Dose ${last.doseIn}g → ${doseIn}g; grind stays at ${grindSetting}. Targets: yield 1:2 (${targetYieldFromDose(doseIn)}g), time ~${defaults.extractionTime}s.`,
         )
       } else {
-        tweaks.push(`At finest (${gmin}) and max dose — try a touch more yield only, or review prep (WDT / tamp).`)
-        tweaks.push(`Yield ${baseYield}g → ${yieldOut}g.`)
+        tweaks.push(`At finest (${gmin}) and max dose — review prep (WDT / tamp) or rest; targets stay yield 1:2 (${targetYieldFromDose(doseIn)}g), time ~${defaults.extractionTime}s.`)
       }
     }
   } else {
@@ -165,20 +164,24 @@ function correctFromLastShot(
 
     if (canGoCoarser) {
       grindSetting = coarser
-      yieldOut = baseYield
-      tweaks.push('Bitter → prefer coarser grind first (less resistance / less over-extraction); keep dose for now.')
-      tweaks.push(`Grind ${last.grindSetting} → ${grindSetting}; yield ${yieldOut}g; dose ${doseIn}g unchanged.`)
+      tweaks.push('Bitter → try a coarser grind first (less resistance / less over-extraction); keep dose for now.')
+      tweaks.push(
+        `Grind ${last.grindSetting} → ${grindSetting}; dose ${doseIn}g unchanged. Targets: yield 1:2 (${targetYieldFromDose(doseIn)}g), time ~${defaults.extractionTime}s.`,
+      )
     } else {
       grindSetting = last.grindSetting
       doseIn = Math.max(DOSE_MIN, Math.round((last.doseIn - DOSE_STEP) * 10) / 10)
-      yieldOut = baseYield
       if (doseIn < last.doseIn) {
         tweaks.push(
           `Already at this machine’s coarsest setting (${gmax}) — trim dose slightly to speed the shot and ease extraction.`,
         )
-        tweaks.push(`Dose ${last.doseIn}g → ${doseIn}g; yield ${yieldOut}g; grind stays at ${grindSetting}.`)
+        tweaks.push(
+          `Dose ${last.doseIn}g → ${doseIn}g; grind stays at ${grindSetting}. Targets: yield 1:2 (${targetYieldFromDose(doseIn)}g), time ~${defaults.extractionTime}s.`,
+        )
       } else {
-        tweaks.push(`At coarsest (${gmax}) and min dose — try a slightly shorter yield or an earlier cut.`)
+        tweaks.push(
+          `At coarsest (${gmax}) and min dose — review prep or try a shorter ratio next pull; targets stay yield 1:2 (${targetYieldFromDose(doseIn)}g), time ~${defaults.extractionTime}s.`,
+        )
       }
     }
   }
@@ -186,11 +189,8 @@ function correctFromLastShot(
   const settings = {
     grindSetting,
     doseIn,
-    yieldOut,
-    extractionTime:
-      rating === 'sour' && baseYield > 0
-        ? Math.round(baseTime * (yieldOut / baseYield))
-        : Math.round(baseTime),
+    yieldOut: targetYieldFromDose(doseIn),
+    extractionTime: defaults.extractionTime,
   }
 
   return {
